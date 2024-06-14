@@ -1,0 +1,282 @@
+[gd_scene load_steps=14 format=2]
+
+[ext_resource path="res://Scenes/base/BackByTime.tscn" type="PackedScene" id=1]
+[ext_resource path="res://Scenes/base/Assitent.tscn" type="PackedScene" id=2]
+[ext_resource path="res://Scenes/base/PlantStatus.tscn" type="PackedScene" id=3]
+[ext_resource path="res://Assets/fontes/this_cafe/This Cafe.ttf" type="DynamicFontData" id=4]
+[ext_resource path="res://Scenes/base/IconUmidadeSolo.tscn" type="PackedScene" id=5]
+[ext_resource path="res://Scenes/base/IconTemperatura.tscn" type="PackedScene" id=6]
+[ext_resource path="res://Scenes/base/IconUmidadeAr.tscn" type="PackedScene" id=7]
+
+[sub_resource type="GDScript" id=1]
+script/source = "extends Node2D
+
+# Para enumeração das expressoes da assistente
+enum Estado{neutra, triste, surpresa, feliz, acenando}
+# Para comutação de estado da planta
+enum Modo{boa, ruim, pessima}
+# Para comutação de imagens por turno
+enum Turno{magrugada, dia, por_do_sol, noite}
+
+func _ready() -> void:
+	$LayerToAssistant/Assitent.position = Vector2(0,0)
+	$AssistanIformations.layer = -2
+
+
+func _process(delta):
+	updateClock()
+	
+	updateBackground()
+	
+	updateIcons()
+	
+	updateAlerts()
+	
+	# Define a expressao atual da assistente
+func defineExpression(expretion):
+	var _assistente = get_node(\"LayerToAssistant/Assitent\")
+	_assistente.expressao = expretion 
+
+
+	# Define estado atual da planta
+func  definePlantStatus(modo):
+	var _planta = get_node(\"PlantStatus\")
+	_planta.modo = modo
+
+
+# Muda de fundo de acordo com o turno
+func defineSkyStatus(turno):
+	$Background/BackByTime.turno = turno
+
+
+func updateClock():
+	var _time = Time.get_datetime_dict_from_system();
+	var _hour = _time.hour;
+	var _minute = _time.minute;
+	var _second = _time.second;
+	
+	# Formatar String - retirar zeros a esquerda: 
+	# https://docs.godotengine.org/en/stable/tutorials/scripting/gdscript/gdscript_format_string.html
+	var _clockString = \"%02d:%02d:%02d\" % [_hour, _minute, _second]
+	$ClockText.text = _clockString;
+
+# Muda backgroud de acordo com a hora do dia
+func updateBackground():
+	var _time = Time.get_datetime_dict_from_system()
+	var _hour = _time.hour;
+	
+	# Passar rápido para fins de teste:
+	_hour = Time.get_ticks_msec()/500 % 24
+	$ClockText.text = str(_hour)
+	$ClockText.rect_position.y = 900
+	
+	var _background = get_node(\"Background/grad\")
+	
+	_background.texture.gradient.colors = [PoolColorArray(), PoolColorArray()]
+	#onde ligar/desligar luz
+	# Madrugada
+	if _hour < 5 or _hour > 21:
+		_background.texture.gradient.colors[0] = Color('1000b4')
+		_background.texture.gradient.colors[1] = Color('000000')
+		defineSkyStatus(Turno.magrugada)
+	# Manhã
+	elif _hour >= 11 and _hour <= 16:
+
+		_background.texture.gradient.colors[0] = Color('f8f8e0')
+		_background.texture.gradient.colors[1] = Color('8be9ff')
+		defineSkyStatus(Turno.dia)
+	# Tarde
+	elif _hour < 16 and _hour <= 19:
+		_background.texture.gradient.colors[0] = Color('fefec9')
+		_background.texture.gradient.colors[1] = Color('dff3ef')
+		defineSkyStatus(Turno.dia)
+	# Por do Sol
+	elif _hour < 19 and _hour <= 21:
+		_background.texture.gradient.colors[0] = Color('fdc14d')
+		_background.texture.gradient.colors[1] = Color('f8d2b9')	
+		defineSkyStatus(Turno.por_do_sol)
+
+	# Noite
+	elif _hour < 23:
+		_background.texture.gradient.colors[0] = Color('235bc6')
+		_background.texture.gradient.colors[1] = Color('030412')	
+		defineSkyStatus(Turno.noite)
+
+
+func updateIcons():
+	var iconeTemp = get_node(\"Icons/IconTemperatura\");
+	var tempMax = 50;
+	var tempMin = 20;
+	iconeTemp.porcentagem = (WifiGlobal.temp - tempMin) / (tempMax - tempMin);
+	var iconeUmiAr 		= get_node(\"Icons/IconUmidadeAr\");
+	var umiArMax = 90;
+	var umiArMin = 20;
+	iconeUmiAr.porcentagem = (WifiGlobal.umi - tempMin) / (tempMax - tempMin);
+	var iconeUmiSolo 	= get_node(\"Icons/IconUmidadeSolo\");
+	var umiSoloMax = 90;
+	var umiSoloMin = 20;
+	iconeUmiSolo.porcentagem = (WifiGlobal.umi_solo - tempMin) / (tempMax - tempMin);
+
+
+func updateAlerts():
+	
+	var _texto = \"O dia está lindo hoje.\"
+	defineExpression(Estado.feliz)
+	definePlantStatus(Modo.boa)
+	if WifiGlobal.temp >= 30:#mudar sistema de mudança dre img da plata->foi pra tirar print
+		# Muito quente.
+		_texto = \"Ah que calor! Este ambiente é apropiado pra sua planta?\"
+		defineExpression(Estado.neutra);
+		definePlantStatus(Modo.boa)
+		pass
+	if WifiGlobal.umi <= 40:
+		# Ar muito úmido.
+		_texto = \"Ar pouco umido.\"
+		defineExpression(Estado.neutra);
+		definePlantStatus(Modo.boa)
+		pass
+	if WifiGlobal.umi <= 20:
+		# Ar muito seco.
+		_texto = \"O ambiente da sua planta esta bem seco\"
+		defineExpression(Estado.triste);
+		definePlantStatus(Modo.ruim)
+		pass	
+	if WifiGlobal.umi_solo < 60:
+		# Solo muito seco.
+		_texto = \"Sua planta esta com sede!!!\\nRegue-a!\"
+		defineExpression(Estado.surpresa);
+		definePlantStatus(Modo.pessima)
+		pass
+	if WifiGlobal.umi_solo > 80:
+		# Solo muito úmido.
+		_texto = \"Ha muita agua no seu solo! Isso pode prejudicar sua planta\"
+		defineExpression(Estado.surpresa);
+		definePlantStatus(Modo.pessima) # ou boa: a decidir
+		pass
+		
+	var _aviso = get_node(\"Alertas\");
+	_aviso.text = _texto;
+
+# Isso não funciona 
+# @TODO: mudar a estratégia para que funcione (pode mudar de cena)
+func _on_Button_pressed() -> void:
+	defineExpression(Estado.acenando)
+	$LayerToAssistant/Assitent.position = Vector2(0, -52)
+	$AssistanIformations.layer = 1
+
+
+func _on_close_pressed() -> void:
+	$LayerToAssistant.position = Vector2(0,0)
+	$AssistanIformations.layer = -2
+"
+
+[sub_resource type="Gradient" id=2]
+colors = PoolColorArray( 0, 0, 0, 1, 0.0273438, 0.430084, 1, 1 )
+
+[sub_resource type="GradientTexture2D" id=3]
+gradient = SubResource( 2 )
+fill_from = Vector2( 1, 1 )
+
+[sub_resource type="DynamicFont" id=5]
+size = 100
+font_data = ExtResource( 4 )
+
+[sub_resource type="DynamicFont" id=6]
+size = 100
+font_data = ExtResource( 4 )
+
+[sub_resource type="DynamicFont" id=4]
+size = 100
+font_data = ExtResource( 4 )
+
+[node name="ClassRoom(main)" type="Node2D"]
+script = SubResource( 1 )
+
+[node name="Background" type="CanvasLayer" parent="."]
+layer = -1
+
+[node name="BackByTime" parent="Background" instance=ExtResource( 1 )]
+
+[node name="grad" type="TextureRect" parent="Background"]
+self_modulate = Color( 1, 1, 1, 0.309804 )
+anchor_right = 1.0
+anchor_bottom = 1.0
+texture = SubResource( 3 )
+expand = true
+
+[node name="PlantStatus" parent="." instance=ExtResource( 3 )]
+
+[node name="Icons" type="Node2D" parent="."]
+
+[node name="IconTemperatura" parent="Icons" instance=ExtResource( 6 )]
+position = Vector2( -192, 200 )
+scale = Vector2( 0.35, 0.35 )
+
+[node name="IconUmidadeAr" parent="Icons" instance=ExtResource( 7 )]
+position = Vector2( -188, 378 )
+scale = Vector2( 0.35, 0.35 )
+
+[node name="IconUmidadeSolo" parent="Icons" instance=ExtResource( 5 )]
+position = Vector2( -194, 554 )
+scale = Vector2( 0.35, 0.35 )
+
+[node name="Alertas" type="Label" parent="."]
+margin_left = 618.0
+margin_top = 156.0
+margin_right = 1407.0
+margin_bottom = 532.0
+custom_colors/font_color = Color( 0, 0, 0, 1 )
+custom_fonts/font = SubResource( 5 )
+text = "alerta"
+align = 1
+valign = 1
+autowrap = true
+
+[node name="Button" type="Button" parent="."]
+self_modulate = Color( 1, 1, 1, 0 )
+margin_left = 1391.0
+margin_top = 525.0
+margin_right = 1696.0
+margin_bottom = 1073.0
+
+[node name="AssistanIformations" type="CanvasLayer" parent="."]
+layer = 0
+
+[node name="sub_back" type="ColorRect" parent="AssistanIformations"]
+margin_left = 50.0
+margin_top = 50.0
+margin_right = 1870.0
+margin_bottom = 1030.0
+
+[node name="text" type="RichTextLabel" parent="AssistanIformations"]
+margin_left = 500.0
+margin_top = 80.0
+margin_right = 1491.0
+margin_bottom = 320.0
+custom_colors/default_color = Color( 0, 0, 0, 1 )
+custom_fonts/normal_font = SubResource( 6 )
+bbcode_enabled = true
+bbcode_text = "[center]INformacao"
+text = "INformacao"
+
+[node name="close" type="Button" parent="AssistanIformations"]
+margin_left = 27.0
+margin_top = 26.0
+margin_right = 169.0
+margin_bottom = 162.0
+
+[node name="LayerToAssistant" type="CanvasLayer" parent="."]
+
+[node name="Assitent" parent="LayerToAssistant" instance=ExtResource( 2 )]
+position = Vector2( 0, -52 )
+
+[node name="ClockText" type="Label" parent="."]
+margin_left = 16.0
+margin_right = 472.0
+margin_bottom = 118.0
+custom_colors/font_outline_modulate = Color( 0, 0, 0, 1 )
+custom_fonts/font = SubResource( 4 )
+text = "00:00:00"
+
+[connection signal="pressed" from="Button" to="." method="_on_Button_pressed"]
+[connection signal="pressed" from="AssistanIformations/close" to="." method="_on_close_pressed"]
