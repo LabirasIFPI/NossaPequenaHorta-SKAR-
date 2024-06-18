@@ -1,0 +1,72 @@
+[gd_scene load_steps=8 format=2]
+
+[ext_resource path="res://Assets/imagens/assistant/AssistenteAcenando.png" type="Texture" id=1]
+[ext_resource path="res://Scripts/Information.gd" type="Script" id=2]
+[ext_resource path="res://Assets/fontes/born-rounded-font/BornRoundedDemo-axrrJ.ttf" type="DynamicFontData" id=3]
+[ext_resource path="res://Scenes/base/BackByTime.tscn" type="PackedScene" id=4]
+[ext_resource path="res://Assets/imagens/icons/button_icon_out.png" type="Texture" id=5]
+
+[sub_resource type="DynamicFont" id=1]
+size = 70
+font_data = ExtResource( 3 )
+
+[sub_resource type="DynamicFont" id=2]
+size = 100
+font_data = ExtResource( 3 )
+
+[node name="Information" type="Node2D"]
+script = ExtResource( 2 )
+
+[node name="BackByTime" parent="." instance=ExtResource( 4 )]
+
+[node name="frame" type="ColorRect" parent="."]
+self_modulate = Color( 0.694118, 0.458824, 0.121569, 1 )
+margin_left = 75.0
+margin_top = 75.0
+margin_right = 1845.0
+margin_bottom = 1005.0
+
+[node name="ColorRect" type="ColorRect" parent="."]
+margin_left = 100.0
+margin_top = 100.0
+margin_right = 1820.0
+margin_bottom = 980.0
+color = Color( 0.282353, 0.576471, 0.164706, 0.921569 )
+
+[node name="Label" type="RichTextLabel" parent="."]
+margin_left = 165.0
+margin_top = 265.0
+margin_right = 1277.0
+margin_bottom = 912.0
+custom_colors/default_color = Color( 0, 0, 0, 1 )
+custom_fonts/normal_font = SubResource( 1 )
+bbcode_enabled = true
+bbcode_text = "[center]Pequeno jardineiro, voce sabia que as plantas nao so produzem o oxigenio que respiramos, mas tambem podem se comunicar entre si!? Elas liberam substancias quimicas para alertar outras plantas sobre ameacas como insetos e doencas. E como se tivessem seu próprio sistema de mensagens secreto na natureza!"
+text = "Pequeno jardineiro, voce sabia que as plantas nao so produzem o oxigenio que respiramos, mas tambem podem se comunicar entre si!? Elas liberam substancias quimicas para alertar outras plantas sobre ameacas como insetos e doencas. E como se tivessem seu próprio sistema de mensagens secreto na natureza!"
+
+[node name="titulo" type="Label" parent="."]
+margin_left = 512.0
+margin_top = 110.0
+margin_right = 1368.0
+margin_bottom = 216.0
+custom_colors/font_color = Color( 0, 0, 0, 1 )
+custom_fonts/font = SubResource( 2 )
+text = "VOCE SABIA?"
+align = 1
+valign = 1
+autowrap = true
+
+[node name="out" type="Button" parent="."]
+margin_left = 7.0
+margin_top = -1.0
+margin_right = 167.0
+margin_bottom = 167.0
+icon = ExtResource( 5 )
+flat = true
+expand_icon = true
+
+[node name="AssistenteAcenando" type="Sprite" parent="."]
+position = Vector2( 1125, 578 )
+texture = ExtResource( 1 )
+
+[connection signal="pressed" from="out" to="." method="_on_out_pressed"]

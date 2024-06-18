@@ -21,7 +21,7 @@ _global_script_class_icons={
 [application]
 
 config/name="Nossa Pequena Horta (SKAR)"
-run/main_scene="res://Scenes/ClassRoom(main).tscn"
+run/main_scene="res://Scenes/Titulo.tscn"
 boot_splash/image="res://Assets/imagens/Labiras_Logo.png"
 boot_splash/fullsize=false
 config/icon="res://icon.png"
